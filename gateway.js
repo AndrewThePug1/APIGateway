@@ -29,12 +29,12 @@ app.get('/api/:service', transformRequest, (req, res) => {
 
 // Response aggregation route
 app.get('/api/aggregate', (req, res) => {
-  const service1Url = 'http://localhost:3001/service1';
-  const service2Url = 'http://localhost:3002/service2';
+  const service1Url = 'http://localhost:3001/service1'; // Assuming service1 responds at this endpoint
+  const service2Url = 'http://localhost:3002/service2'; // Assuming service2 responds at this endpoint
 
   const requests = [
-    axios.get(service1Url),
-    axios.get(service2Url)
+    axios.get(service1Url, { params: req.query }), // Forward any query params received
+    axios.get(service2Url, { params: req.query })
   ];
 
   Promise.all(requests)
