@@ -29,17 +29,23 @@ app.get('/api/:service', transformRequest, (req, res) => {
 
 // Response aggregation route
 app.get('/api/aggregate', (req, res) => {
-  const service1Url = 'http://localhost:3001/service1'; // Assuming service1 responds at this endpoint
-  const service2Url = 'http://localhost:3002/service2'; // Assuming service2 responds at this endpoint
+  const service1Url = 'http://localhost:3001/service1';
+  const service2Url = 'http://localhost:3002/service2';
 
   const requests = [
-    axios.get(service1Url, { params: req.query }), // Forward any query params received
+    axios.get(service1Url, { params: req.query }),
     axios.get(service2Url, { params: req.query })
   ];
 
   Promise.all(requests)
     .then(responses => {
-      res.json(responses.map(response => response.data));
+      // Enhanced aggregation logic here
+      const aggregatedResponse = {
+        service1Data: responses[0].data,
+        service2Data: responses[1].data,
+        timestamp: new Date().toISOString()
+      };
+      res.json(aggregatedResponse);
     })
     .catch(error => {
       res.status(500).send('Error making requests to services');
