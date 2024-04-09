@@ -1,11 +1,52 @@
 const express = require('express');
 const app = express();
+const axios = require('axios');
 
-app.get('/service1', (req, res) => {
-  res.send('Response from Service 1');
+// Middleware for request transformation
+const transformRequest = (req, res, next) => {
+  // Modify headers
+  req.headers['X-Custom-Header'] = 'Hello from API Gateway';
+  // Modify query parameters
+  req.query.apiKey = 'your-api-key';
+  next();
+};
+
+// Routing and proxying logic
+app.get('/api/:service', transformRequest, (req, res) => {
+  const serviceName = req.params.service;
+  const serviceUrl = `http://localhost:3001/${serviceName}`;
+  axios.get(serviceUrl, {
+    headers: req.headers,
+    params: req.query
+  })
+    .then(response => {
+      res.send(response.data);
+    })
+    .catch(error => {
+      res.status(500).send('Error proxying request');
+    });
 });
 
-const PORT = 3001;
+// Response aggregation route
+app.get('/api/aggregate', (req, res) => {
+  const service1Url = 'http://localhost:3001/service1';
+  const service2Url = 'http://localhost:3002/service2';
+
+  const requests = [
+    axios.get(service1Url),
+    axios.get(service2Url)
+  ];
+
+  Promise.all(requests)
+    .then(responses => {
+      res.json(responses.map(response => response.data));
+    })
+    .catch(error => {
+      res.status(500).send('Error making requests to services');
+    });
+});
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Service 1 running on port ${PORT}`);
+  console.log(`API Gateway running on port ${PORT}`);
 });
